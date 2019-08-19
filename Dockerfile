@@ -1,8 +1,8 @@
 FROM node
 WORKDIR /Servidor
 COPY package.json .
-COPY server.js
-COPY ConexionDB.js
+COPY server.js .
+COPY ConexionDB.js .
 COPY ModelosDatos ModelosDatos
 COPY public public
 COPY views views
