@@ -1,0 +1,39 @@
+*{
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+body{
+    background-image: linear-gradient(to bottom right,red,white);
+    background-repeat: no-repeat;
+    min-height: 100rem;
+}
+.loggingForm{
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 6.5rem;
+    width: 30%;
+    background: white;
+    box-shadow: 0.2rem 0.2rem 0.8rem black;
+    padding: 0.6rem;
+    height: 20rem;
+}
+.inputsForm{
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    display: inline-block;
+    height: 2.4rem;
+    background: rgb(241, 240, 240);
+    color:black;
+    font-weight: bold;
+}
+.iniciarSesionButton{
+    background: rgb(252, 164, 32);
+    color :black;
+    font-size: 1.3rem;
+    width: 35%;
+    margin-left: auto;
+    margin-right: auto;
+    border: 0.1rem solid white;
+}

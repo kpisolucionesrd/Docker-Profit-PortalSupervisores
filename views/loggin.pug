@@ -1,0 +1,22 @@
+doctype html
+html
+    head
+        title Loggin Supervisores
+        link(rel='stylesheet',href="/login/login.css")
+    body
+        center
+            span(style={color:"black","font-size":'2rem'}) PORTAL SUPERVISORES
+        form.loggingForm(method="POST",action="/")
+            div.tituloForm(style={"text-align":"center"})
+                
+            br
+            br
+            input.inputsForm(type="number",placeholder="Digite su usuario...",name="usuario")
+            br
+            br
+            input.inputsForm(type="password",placeholder="Digite su Contraseña...",name="password")
+            br
+            br
+            br
+            br
+            button.iniciarSesionButton(type="submit") Iniciar Sesion
