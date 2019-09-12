@@ -1,0 +1,138 @@
+#-----------------Proceso de Instalacion de Paquetes----------------------------------
+
+#SHINY
+paquetesInstalados<-installed.packages()[,c("Package")]
+if("shiny" %in% paquetesInstalados){
+  print("Shiny ya esta instalado en R")
+}else{
+  print("Instalando shiny....")
+  install.packages("shiny")
+}
+
+#SQLITE
+if("RSQLite" %in% paquetesInstalados){
+  print("RSQLite ya esta instalado en R")
+}else{
+  print("Instalando RSQLite.....")
+  install.packages("RSQLite")
+}
+
+#DBI
+if("DBI" %in% paquetesInstalados){
+  print("RSQLite ya esta instalado en R")
+}else{
+  print("Instalando DBI...")
+  install.packages("DBI")
+}
+#-----------------FUNCIONES DEL PROCESO (DATA HANDLING)-------------------------------
+library(DBI)
+library(RSQLite)
+
+uriConnection<-"C:\\Users\\Kelvin Melendez\\Desktop\\PROFIT\\PortalSupervisores\\profit.db"
+
+f_GettingData<-function(){
+  #connection
+  connection<-dbConnect(RSQLite::SQLite(), uriConnection)
+  
+  #Getting Total Data
+  dataCanalIndirecto<-dbGetQuery(connection,"SELECT * FROM Profit_CanalIndirecto_data")
+  dataCanalIndirecto$fecha<-as.Date(dataCanalIndirecto$fecha,format = "%Y-%m-%d")
+  
+  #Closing Connection
+  dbDisconnect(connection)
+  
+  return(dataCanalIndirecto)
+}
+
+f_GettinUsers<-function(){
+  #connection
+  connection<-dbConnect(RSQLite::SQLite(), uriConnection)
+  
+  #Getting Total Data
+  usuariosProfit<-dbGetQuery(connection,"SELECT * FROM Profit_CanalIndirecto_supervisores")
+  
+  #Closing Connection
+  dbDisconnect(connection)
+  
+  return(usuariosProfit)
+}
+
+f_gettingColmadosFiltered<-function(fechas,nombreMercaderista){
+  
+  #Fechas
+  fechas<-as.Date(fechas,format="%Y-%m-%d")
+  
+  #codidMercaderista
+  idMercaderista<-subset(usuariosProfit,usuariosProfit$nombreMerca==nombreMercaderista)$idMerca[1]
+  
+  
+  datafiltered<-subset(dataCanalIndirecto,dataCanalIndirecto$fecha>=fechas[1] & dataCanalIndirecto$fecha<=fechas[2] & dataCanalIndirecto$idMerca==idMercaderista)
+  return(unique(datafiltered$colmado))
+}
+
+f_gettingCantColmados<-function(fechas,nombreMercaderista){
+  #Fechas
+  fechas<-as.Date(fechas,format="%Y-%m-%d")
+  
+  #codidMercaderista
+  idMercaderista<-subset(usuariosProfit,usuariosProfit$nombreMerca==nombreMercaderista)$idMerca[1]
+  
+  #ColmadosCompletados
+  colmadosCompletados<-subset(dataCanalIndirecto[,c("idMerca","fecha","valor")],dataCanalIndirecto$variable=="colmado")
+  
+  #colmadosAgrupados
+  colmadosAgrupados<-aggregate(colmadosCompletados,by=list(colmadosCompletados$idMerca,colmadosCompletados$fecha),FUN = function(x) length(unique(x)))
+  colnames(colmadosAgrupados)<-c("idMerca","Fecha","CantID","CantFecha","CantColm")
+  
+  #Resultado
+  result<-subset(colmadosAgrupados,colmadosAgrupados$Fecha>=fechas[1] & colmadosAgrupados$Fecha<=fechas[2] & colmadosAgrupados$idMerca==idMercaderista)
+  result<-result[,c("Fecha","CantColm")]
+  return(result)
+}
+
+#-------------------------------------------------------------------------------------
+library(shiny)
+
+dataCanalIndirecto<-f_GettingData()
+usuariosProfit<-f_GettinUsers()
+
+
+#USER INTERFACE
+userInterface<-fluidPage(
+  titlePanel("Dashboard Supervisores"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("Supervisores","Supervisores",choices = unique(usuariosProfit$supervisor)),
+      dateRangeInput("fechas","Intervalo Fecha",start = "2019-05-01"),
+      uiOutput("Mercaderistas"),
+      uiOutput("Colmados")
+    ),
+    mainPanel(
+      tabsetPanel(
+        type = "tabs",
+        tabPanel("Vista Supervisores",plotOutput("barColmados")),
+        tabPanel("Vista Supervisora Canal Indirecto")
+        
+      )
+    )
+  )
+)
+
+#SERVER
+servidor<-function(input,output){
+  output$Mercaderistas<-renderUI({
+    selectInput("Mercaderista","Mercaderistas",choices = unique(usuariosProfit[usuariosProfit$supervisor==input$Supervisores,]$nombreMerca))
+  })
+  
+  output$Colmados<-renderUI({
+    selectInput("Colmado","Colmados",choices = f_gettingColmadosFiltered(input$fechas,input$Mercaderista))
+  })
+  
+  output$barColmados<-renderPlot({
+    barplot(f_gettingCantColmados(input$fechas,input$Mercaderista)$CantColm,names.arg = f_gettingCantColmados(input$fechas,input$Mercaderista)$Fecha,col = "skyblue",xlab = "Colmados Completados X Dia X Mercaderista")
+  })
+  
+}
+
+#SHINY APP
+shinyApp(ui=userInterface,server=servidor)
